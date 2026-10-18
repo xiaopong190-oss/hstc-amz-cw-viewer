@@ -1,0 +1,6 @@
+readonly/dist/
+.env
+.env.*
+node_modules/
+*.csv
+*.db

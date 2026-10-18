@@ -1,0 +1,18 @@
+# HSTC_AMZ_CW 只读通道
+
+此仓库只包含观看页面、加密程序和发布流程，不提交明文账本、密码、令牌或本地备份。管理端原私有仓库保持私有。
+
+GitHub Actions 每 30 分钟尝试读取管理端已确认的云端版本，成功后生成 AES-256-GCM 加密快照并发布 Pages。M 码通过 PBKDF2-SHA256（600,000 次，随机盐）派生密钥；每份快照采用随机 IV。浏览器本地解密，观看时 M 码不发给 GitHub。不把明文数据或密码保存在 localStorage。
+
+只读端可筛选交易、分别统计币种、查看商品维度字段和占比。没有上传或删除入口。发布失败会终止部署，旧站点保留；页面显示快照时间和云端版本。GitHub 调度可能延迟，不承诺实时同步。已发布的密文可被下载，访问权限由解密口令保护。更换口令不能收回他人已解密或已下载的数据。
+
+## 配置
+
+1. 仓库 Settings → Pages → Source 选择 GitHub Actions。
+2. Actions Secrets 设置 `LEDGER_PASSWORD`（管理端 M 码）、`VIEWER_PASSWORD`（观看 M 码，缺省使用管理端 M 码）。不在仓库文件、工作流或命令参数中写入密钥。
+3. 手动运行 `Publish encrypted read-only reports`，之后定时自动发布。
+4. 在国内实际网络中测试 Pages 地址。能打开 github.com 不等于 github.io 一定可访问。
+
+管理端网址通过工作流 `LEDGER_ORIGIN` 配置。目前为 https://hstc-amz-cw.akolojutet24.chatgpt.site/ 。读取任一批次失败、版本混合、登录失败或云端无已确认数据时，本次不发布空快照。
+
+本地验证：Node.js 24 下运行 `node --test tests/readonly.test.mjs`。构建需要通过环境变量注入密钥，输出到被 Git 忽略的 `readonly/dist/`；只允许上传构建后的 Pages artifact。

@@ -1,0 +1,1 @@
+{"name":"hstc-amz-cw-viewer","private":true,"type":"module","scripts":{"test":"node --test tests/readonly.test.mjs"},"engines":{"node":">=24"}}

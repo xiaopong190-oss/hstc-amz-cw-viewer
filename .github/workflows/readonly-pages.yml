@@ -1,0 +1,37 @@
+name: Publish encrypted read-only reports
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: readonly-pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate encryption and view-only behavior
+        run: node --test tests/readonly.test.mjs
+      - name: Build encrypted snapshot from confirmed cloud revision
+        run: node readonly/build.mjs
+        env:
+          LEDGER_ORIGIN: https://hstc-amz-cw.akolojutet24.chatgpt.site/
+          LEDGER_PASSWORD: ${{ secrets.LEDGER_PASSWORD }}
+          VIEWER_PASSWORD: ${{ secrets.VIEWER_PASSWORD }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: readonly/dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
