@@ -27,7 +27,7 @@ jobs:
         run: node readonly/build.mjs
         env:
           LEDGER_ORIGIN: https://hstc-amz-cw.akolojutet24.chatgpt.site/
-          LEDGER_PASSWORD: ${{ secrets.LEDGER_PASSWORD }}
+          READONLY_EXPORT_TOKEN: ${{ secrets.READONLY_EXPORT_TOKEN }}
           VIEWER_PASSWORD: ${{ secrets.VIEWER_PASSWORD }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

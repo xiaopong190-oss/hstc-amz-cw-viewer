@@ -34,14 +34,14 @@ test('view filtering, per-currency totals and HTML escaping',()=>{
 });
 test('publisher reads only confirmed snapshot and outputs no plaintext or credentials',async()=>{
  const output=await mkdtemp(path.join(os.tmpdir(),'ledger-view-'));const requests=[];
- try{const fetcher=async(url,options={})=>{requests.push({path:new URL(url).pathname,method:options.method||'GET'});if(new URL(url).pathname==='/login')return new Response(null,{status:303,headers:{'set-cookie':'ledger_session=mock; HttpOnly'}});if(new URL(url).pathname==='/api/ledger/manifest')return Response.json({legacy:true});return Response.json({revision:7,payload:state});};
- const result=await buildReadonly({origin:'https://example.test/',password:'secret-only-test',output,fetcher});assert.equal(result.revision,7);assert.deepEqual(requests.map(r=>r.method),['POST','GET','GET']);
+ try{const fetcher=async(url,options={})=>{requests.push({path:new URL(url).pathname,method:options.method||'GET'});if(new URL(url).pathname==='/login')return new Response(null,{status:303,headers:{'set-cookie':'ledger_session=mock; HttpOnly'}});if(new URL(url).pathname==='/api/readonly/ledger/manifest')return Response.json({legacy:true});return Response.json({revision:7,payload:state});};
+ const result=await buildReadonly({origin:'https://example.test/',exportToken:'read-only-test-token',viewerPassword:'secret-only-test',output,fetcher});assert.equal(result.revision,7);assert.deepEqual(requests.map(r=>r.method),['GET','GET']);
  const manifest=JSON.parse(await readFile(path.join(output,'snapshot.json')));assert.equal(JSON.stringify(manifest).includes('secret-only-test'),false);assert.equal(JSON.stringify(manifest).includes('private-fingerprint'),false);
  const unlocked=await openSnapshot(manifest,'secret-only-test',p=>readFile(path.join(output,p)));assert.equal(unlocked.tx.length,2);
  assert.ok((await readFile(path.join(output,'index.html'),'utf8')).includes('只读模式'));
  }finally{await rm(output,{recursive:true,force:true});}
 });
 test('publisher aborts on missing cloud revision without publishing an empty replacement',async()=>{
- const fetcher=async url=>new URL(url).pathname==='/login'?new Response(null,{status:303,headers:{'set-cookie':'ledger_session=mock'}}):new URL(url).pathname==='/api/ledger/manifest'?Response.json({legacy:true}):Response.json({revision:0,payload:null});
- await assert.rejects(buildReadonly({origin:'https://example.test/',password:'test',fetcher}),/不发布/);
+ const fetcher=async url=>new URL(url).pathname==='/login'?new Response(null,{status:303,headers:{'set-cookie':'ledger_session=mock'}}):new URL(url).pathname==='/api/readonly/ledger/manifest'?Response.json({legacy:true}):Response.json({revision:0,payload:null});
+ await assert.rejects(buildReadonly({origin:'https://example.test/',exportToken:'read-only-test-token',viewerPassword:'test',fetcher}),/不发布/);
 });

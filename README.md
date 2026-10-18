@@ -9,10 +9,12 @@ GitHub Actions 每 30 分钟尝试读取管理端已确认的云端版本，成�
 ## 配置
 
 1. 仓库 Settings → Pages → Source 选择 GitHub Actions。
-2. Actions Secrets 设置 `LEDGER_PASSWORD`（管理端 M 码）、`VIEWER_PASSWORD`（观看 M 码，缺省使用管理端 M 码）。不在仓库文件、工作流或命令参数中写入密钥。
+2. Actions Secrets 设置 `READONLY_EXPORT_TOKEN`（随机生成的专用只读凭证）、`VIEWER_PASSWORD`（观看 M 码）。不在仓库文件、工作流或命令参数中写入密钥。
 3. 手动运行 `Publish encrypted read-only reports`，之后定时自动发布。
 4. 在国内实际网络中测试 Pages 地址。能打开 github.com 不等于 github.io 一定可访问。
 
 管理端网址通过工作流 `LEDGER_ORIGIN` 配置。目前为 https://hstc-amz-cw.akolojutet24.chatgpt.site/ 。读取任一批次失败、版本混合、登录失败或云端无已确认数据时，本次不发布空快照。
 
 本地验证：Node.js 24 下运行 `node --test tests/readonly.test.mjs`。构建需要通过环境变量注入密钥，输出到被 Git 忽略的 `readonly/dist/`；只允许上传构建后的 Pages artifact。
+
+只读凭证仅能 GET 已确认的账本和分片；不支持登录、上传、删除、修改。管理端登录 M 码不交给 GitHub。
