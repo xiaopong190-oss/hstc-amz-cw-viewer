@@ -36,5 +36,5 @@ export async function openSnapshot(manifest,password,load){
 }
 // Only fields needed for viewing are published; omit transaction fingerprints and import settings.
 export function viewingState(state){
- return {tx:(state.tx||[]).map(({date,acct,site,cur,amount,cat,type,desc,order,sku,status})=>({date,acct,site,cur,amount,cat,type,desc,order,sku,status})),productReports:state.productReports||[]};
+ return {tx:(state.tx||[]).map(({date,acct,site,cur,amount,cat,type,desc,order,sku,status,f})=>({date,acct,site,cur,amount,cat,type,desc,order,sku,status,f})),productReports:state.productReports||[],set:{base:state.set?.base||'USD',rates:Object.fromEntries(Object.entries(state.set?.rates||{}).filter(([code,value])=>/^[A-Z]{3}$/.test(code)&&Number.isFinite(Number(value))&&Number(value)>0).map(([code,value])=>[code,Number(value)]))}};
 }

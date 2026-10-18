@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '24'
       - name: Validate encryption and view-only behavior
-        run: node --test tests/readonly.test.mjs
+        run: node --test tests/readonly.test.mjs tests/readonly-dashboard.test.mjs
       - name: Build encrypted snapshot from confirmed cloud revision
         run: node readonly/build.mjs
         env:

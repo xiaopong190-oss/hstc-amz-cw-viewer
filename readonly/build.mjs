@@ -12,7 +12,7 @@ export async function buildReadonly({origin,exportToken,viewerPassword,output=pa
  const {manifest,files}=await sealSnapshot(viewingState(saved.payload),viewerPassword,{revision:saved.revision});
  await fs.mkdir(path.join(output,'data'),{recursive:true});
  for(const [name,bytes] of files)await fs.writeFile(path.join(output,name),bytes);
- for(const name of ['index.html','viewer.css','snapshot-crypto.mjs'])await fs.copyFile(path.join(here,name),path.join(output,name));
+ for(const name of ['index.html','viewer.css','snapshot-crypto.mjs','dashboard-core.mjs'])await fs.copyFile(path.join(here,name),path.join(output,name));
  await fs.writeFile(path.join(output,'viewer.mjs'),(await fs.readFile(path.join(here,'viewer.mjs'),'utf8')).replace('../shared-site/worker/product-fields.mjs','./product-fields.mjs'));
  for(const name of ['product-fields.mjs','products-core.mjs'])await fs.copyFile(path.join(here,'../shared-site/worker',name),path.join(output,name));
  await fs.writeFile(path.join(output,'snapshot.json'),JSON.stringify(manifest));await fs.writeFile(path.join(output,'.nojekyll'),'');
