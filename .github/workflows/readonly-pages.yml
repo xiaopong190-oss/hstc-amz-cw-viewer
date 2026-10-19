@@ -2,7 +2,7 @@ name: Publish encrypted read-only reports
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17,47 * * * *'
+    - cron: '17 8 * * *'
 permissions:
   contents: read
   pages: write
