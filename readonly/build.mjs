@@ -7,7 +7,8 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 export async function buildReadonly({origin,exportToken,viewerPassword,output=path.join(here,'dist'),fetcher=fetch}){
  const url=new URL(origin);if(url.protocol!=='https:'||url.pathname!=='/'||url.search||url.hash)throw Error('请输入管理端 HTTPS 根网址');
  if(!exportToken||!viewerPassword)throw Error('缺少发布密钥');
- const saved=await readLedger({request:async route=>{const r=await fetcher(new URL(route.replace('/api/ledger','/api/readonly/ledger'),url),{headers:{Authorization:'Bearer '+exportToken},redirect:'error',signal:AbortSignal.timeout(60000)});if(!r.ok)throw Object.assign(Error(`读取只读云端失败 HTTP ${r.status}`),{status:r.status});return r.json();}});
+ const started=Date.now();let received=0;
+ const saved=await readLedger({request:async route=>{if(Date.now()-started>120000)throw Error('读取云端超过 120 秒，已中断');const r=await fetcher(new URL(route.replace('/api/ledger','/api/readonly/ledger'),url),{headers:{Authorization:'Bearer '+exportToken},redirect:'error',signal:AbortSignal.timeout(Math.min(60000,Math.max(1,120000-(Date.now()-started))))});if(!r.ok)throw Object.assign(Error(`读取只读云端失败 HTTP ${r.status}`),{status:r.status});const raw=await r.text();received+=new TextEncoder().encode(raw).byteLength;if(received>128*1024*1024)throw Error('读取数据超过 128 MiB，已中断');return JSON.parse(raw);}});
  if(!saved.payload||!Number.isSafeInteger(saved.revision)||saved.revision<1)throw Error('云端尚无已确认账本，本次不发布');
  const {manifest,files}=await sealSnapshot(viewingState(saved.payload),viewerPassword,{revision:saved.revision});
  await fs.mkdir(path.join(output,'data'),{recursive:true});

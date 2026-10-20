@@ -2,7 +2,7 @@ name: Publish encrypted read-only reports
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 8 * * *'
+    - cron: '*/5 * * * *'
 permissions:
   contents: read
   pages: write
@@ -13,6 +13,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -21,17 +22,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Check confirmed cloud version
+        id: check
+        run: node readonly/check-update.mjs
+        env:
+          LEDGER_ORIGIN: https://hstc-amz-cw.akolojutet24.chatgpt.site/
+          READONLY_EXPORT_TOKEN: ${{ secrets.READONLY_EXPORT_TOKEN }}
       - name: Validate encryption and view-only behavior
-        run: node --test tests/readonly.test.mjs tests/readonly-dashboard.test.mjs
+        if: steps.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: node --test tests/readonly.test.mjs tests/readonly-dashboard.test.mjs tests/readonly-update.test.mjs
       - name: Build encrypted snapshot from confirmed cloud revision
+        if: steps.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: node readonly/build.mjs
         env:
           LEDGER_ORIGIN: https://hstc-amz-cw.akolojutet24.chatgpt.site/
           READONLY_EXPORT_TOKEN: ${{ secrets.READONLY_EXPORT_TOKEN }}
           VIEWER_PASSWORD: ${{ secrets.VIEWER_PASSWORD }}
       - uses: actions/configure-pages@v5
+        if: steps.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
       - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         with:
           path: readonly/dist
       - id: deploy
+        if: steps.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/deploy-pages@v4
