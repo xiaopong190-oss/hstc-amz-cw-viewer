@@ -37,11 +37,11 @@ export function mount(){
  async function getManifest(){const r=await fetch(new URL(`snapshot.json?t=${Date.now()}`,location.href),{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('尚未发布只读数据，或网络不可用');return r.json();}
  $('unlock').onsubmit=async e=>{e.preventDefault();if($('open').disabled)return;const mine=++generation;$('open').disabled=true;$('message').textContent='正在下载并解密快照…';try{const next=await getManifest(),data=await openSnapshot(next,$('password').value,async file=>{const r=await fetch(new URL(`${file}?r=${next.revision}&t=${encodeURIComponent(next.published)}`,location.href),{cache:'no-store',signal:AbortSignal.timeout(60000)});if(!r.ok)throw Error('快照分片无法读取，请稍后重试');return r.arrayBuffer();});if(mine!==generation)return;state=data;manifest=next;sessionCode=$('password').value;$('password').value='';$('gate').hidden=true;$('report').hidden=false;$('message').textContent='';$('updated').textContent=`快照发布于 ${new Date(manifest.published).toLocaleString()} · 云端版本 ${manifest.revision}`;$('freshness').textContent='后台定时检查云端变化并发布；页面每分钟自动检查快照，以上方发布时间为准。';initializePeriods();options('account',[...new Set(state.tx.map(r=>r.acct))].sort(),'全部账号');options('site',[...new Set(state.tx.map(r=>r.site))].sort(),'全部站点');options('currency',[...new Set(state.tx.map(r=>r.cur))].sort(),'全部币种');$('products').replaceChildren(...state.productReports.map((r,i)=>new Option(`${r.account} · ${r.site} · ${r.from} 至 ${r.to}`,String(i))));renderTx();renderProducts();}catch(error){$('message').textContent=error.message;}finally{$('open').disabled=false;}};
  $('lock').onclick=()=>{generation++;sessionCode='';state=null;manifest=null;page=productPage=0;$('report').hidden=true;$('gate').hidden=false;for(const id of ['transactions','totals','productHead','productBody','fields','products','trend','breakdown','feeNote','periodBody','accountBody','account','site','currency','period'])$(id).replaceChildren();for(const id of ['count','productSummary','updated','conversion','notice','productPage','page'])$(id).textContent='';for(const id of ['from','to','query','productQuery'])$(id).value='';$('password').value='';$('password').focus();};
- async function refreshSnapshot(manual=false){
-  if(!state||!sessionCode||refreshing)return;$('notice').dataset.level='';refreshing=true;const mine=generation;$('refresh').disabled=true;
+ async function refreshSnapshot(){
+  if(!state||!sessionCode||refreshing)return;$('notice').dataset.level='';refreshing=true;const mine=generation;
   try{const next=await getManifest();if(mine!==generation)return;
    if(next.revision<manifest.revision)throw Error('读取到较旧的快照，继续保留当前报表');
-   if(next.revision===manifest.revision&&next.published===manifest.published){if(manual)$('notice').textContent='当前已是最新发布快照；管理端修改仍需等待发布。';return;}
+   if(next.revision===manifest.revision&&next.published===manifest.published){$('notice').textContent='';return;}
    $('notice').textContent='发现新版快照，正在自动载入…';
    const data=await openSnapshot(next,sessionCode,async file=>{const r=await fetch(new URL(`${file}?r=${next.revision}&t=${encodeURIComponent(next.published)}`,location.href),{cache:'no-store',signal:AbortSignal.timeout(60000)});if(!r.ok)throw Error('新版分片读取失败，继续保留当前报表');return r.arrayBuffer();});
    if(mine!==generation||!sessionCode)return;
@@ -52,10 +52,9 @@ export function mount(){
    $('products').replaceChildren(...state.productReports.map((r,i)=>new Option(`${r.account} · ${r.site} · ${r.from} 至 ${r.to}`,String(i))));const reportIndex=state.productReports.findIndex(r=>identity(r)===identity(oldReport));if(reportIndex>=0)$('products').value=String(reportIndex);
    $('updated').textContent=`快照发布于 ${new Date(manifest.published).toLocaleString()} · 云端版本 ${manifest.revision}`;renderTx();renderProducts();$('notice').textContent='已自动载入最新发布快照。';
   }catch(error){if(mine===generation){$('notice').dataset.level='error';$('notice').textContent=`更新未完成：${error.message}；当前报表继续保留。`;}}
-  finally{refreshing=false;$('refresh').disabled=false;}
+  finally{refreshing=false;}
  }
- $('refresh').onclick=()=>refreshSnapshot(true);
- setInterval(()=>{if(document.visibilityState!=='hidden')refreshSnapshot();},60000);
+ setInterval(()=>document.visibilityState!=='hidden'?refreshSnapshot():undefined,60000);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSnapshot();});
  window.addEventListener('online',()=>refreshSnapshot());
  window.addEventListener('focus',()=>refreshSnapshot());
